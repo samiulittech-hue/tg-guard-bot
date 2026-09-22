@@ -10,7 +10,7 @@ DATA_FILE = "group_users.json"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Render keep-alive web server
+# Mini Web Server for Render Keep-Alive
 app = Flask(__name__)
 
 @app.route('/')
@@ -47,6 +47,20 @@ def get_user_stats(user_id):
         save_data(group_users)
     return group_users[str_uid]
 
+# Private Start Command Handler
+@bot.message_handler(commands=['start'], func=lambda msg: msg.chat.type == 'private')
+def send_welcome(message):
+    user_name = message.from_user.first_name
+    welcome_text = (
+        f"👋 হ্যালো **{user_name}**!\n\n"
+        f"🤖 আমি **Group Access Guard Bot**।\n"
+        f"গ্রুপে স্প্যাম ঠেকাতে এবং মেম্বার বাড়ানোর জন্য আমাকে আপনার গ্রুপে **Admin** হিসেবে যুক্ত করুন "
+        f"(অবশ্যই **Delete Messages** পারমিশন অন রাখবেন)।\n\n"
+        f"📌 নিয়ম: সদস্যরা ন্যূনতম ৩ জন নতুন মেম্বার অ্যাড না করা পর্যন্ত গ্রুপে মেসেজ লিখতে পারবে না।"
+    )
+    bot.send_message(message.chat.id, welcome_text, parse_mode="Markdown")
+
+# Track Newly Added Members
 @bot.message_handler(content_types=['new_chat_members'])
 def handle_new_members(message):
     adder_id = message.from_user.id
@@ -77,6 +91,7 @@ def handle_new_members(message):
                 parse_mode="Markdown"
             )
 
+# Group Message Filter
 @bot.message_handler(func=lambda message: message.chat.type in ['group', 'supergroup'])
 def monitor_group_messages(message):
     user_id = message.from_user.id
